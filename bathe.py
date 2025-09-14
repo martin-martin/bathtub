@@ -38,18 +38,19 @@ class Database:
                     width REAL NOT NULL,
                     height REAL NOT NULL,
                     side_incline_degrees REAL NOT NULL,
+                    liters TEXT DEFAULT 'N/A',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
     
     def add_bathtub(self, name: str, top_length: float, bottom_length: float, 
-                    width: float, height: float, side_incline: float) -> int:
+                    width: float, height: float, side_incline: float, liters: str = "N/A") -> int:
         """Add a new bathtub to the database."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
-                INSERT INTO bathtubs (name, top_length, bottom_length, width, height, side_incline_degrees)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (name, top_length, bottom_length, width, height, side_incline))
+                INSERT INTO bathtubs (name, top_length, bottom_length, width, height, side_incline_degrees, liters)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (name, top_length, bottom_length, width, height, side_incline, liters))
             return cursor.lastrowid
     
     def get_all_bathtubs(self) -> List[Tuple]:
@@ -58,7 +59,7 @@ class Database:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute("""
                 SELECT id, name, top_length, bottom_length, width, height, 
-                       side_incline_degrees, created_at
+                       side_incline_degrees, liters, created_at
                 FROM bathtubs
                 ORDER BY created_at DESC
             """)
@@ -156,6 +157,9 @@ class AddBathtubScreen(Screen):
                 yield Input(placeholder="Enter height", id="height_input",
                           validators=[Number(minimum=0)])
                 
+                yield Label("Liters (optional):")
+                yield Input(placeholder="Enter capacity in liters (leave empty for N/A)", id="liters_input")
+                
                 with Horizontal(classes="button-group"):
                     yield Button("Calculate & Save", variant="primary", id="save_button")
                     yield Button("Cancel", variant="default", id="cancel_button")
@@ -186,6 +190,7 @@ class AddBathtubScreen(Screen):
         bottom_length_input = self.query_one("#bottom_length_input", Input)
         width_input = self.query_one("#width_input", Input)
         height_input = self.query_one("#height_input", Input)
+        liters_input = self.query_one("#liters_input", Input)
         result_display = self.query_one("#result_display", Static)
         
         # Validate inputs
@@ -206,6 +211,9 @@ class AddBathtubScreen(Screen):
             result_display.remove_class("result-display")
             return
         
+        # Handle liters input - default to "N/A" if empty
+        liters = liters_input.value.strip() if liters_input.value.strip() else "N/A"
+        
         # Calculate incline
         incline = self.calculate_incline(top_length, bottom_length, height)
         
@@ -217,7 +225,8 @@ class AddBathtubScreen(Screen):
             bottom_length,
             width,
             height,
-            incline
+            incline,
+            liters
         )
         
         # Display result
@@ -233,6 +242,7 @@ class AddBathtubScreen(Screen):
         bottom_length_input.value = ""
         width_input.value = ""
         height_input.value = ""
+        liters_input.value = ""
     
     @on(Button.Pressed, "#cancel_button")
     async def cancel(self, event: Button.Pressed) -> None:
@@ -306,6 +316,7 @@ class ViewBathtubsScreen(Screen):
         table.add_column("Width (cm)", key="width", width=10)
         table.add_column("Height (cm)", key="height", width=10)
         table.add_column("Incline (°)", key="incline", width=10)
+        table.add_column("Liters", key="liters", width=10)
         table.add_column("Created", key="created", width=20)
         
         # Load data
@@ -322,6 +333,7 @@ class ViewBathtubsScreen(Screen):
                 f"{bathtub['width']:.1f}",
                 f"{bathtub['height']:.1f}",
                 f"{bathtub['side_incline_degrees']:.2f}",
+                bathtub['liters'],
                 created_dt.strftime("%Y-%m-%d %H:%M")
             )
     
@@ -348,6 +360,7 @@ class ViewBathtubsScreen(Screen):
         table.add_column("Width (cm)", key="width", width=10)
         table.add_column("Height (cm)", key="height", width=10)
         table.add_column("Incline (°)", key="incline", width=10)
+        table.add_column("Liters", key="liters", width=10)
         table.add_column("Created", key="created", width=20)
         
         # Load data
@@ -364,6 +377,7 @@ class ViewBathtubsScreen(Screen):
                 f"{bathtub['width']:.1f}",
                 f"{bathtub['height']:.1f}",
                 f"{bathtub['side_incline_degrees']:.2f}",
+                bathtub['liters'],
                 created_dt.strftime("%Y-%m-%d %H:%M")
             )
     
