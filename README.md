@@ -1,10 +1,8 @@
 # Bathtub Inclines
 
-It's hard to get information about inclines. Here's a text-based app to record and view inclines:
+It's hard to get information about inclines. You can use the TUI app in `bathe.py` to record and view inclines.
 
-![Screengrab showing the TUI interface with a list of four bathtubs and their measurements](./bathtubs.png)
-
-Here's the content of the latest DB entries:
+Here's the content of the latest DB entries for quick comparison:
 
 ```
 ID   Name                    Top      Bottom   Width    Height   Incline  Liters     Created     
